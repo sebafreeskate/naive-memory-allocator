@@ -35,6 +35,7 @@ MemoryNode* build_node(void *memory, size_t size, MemoryNode* prev, bool isFree)
     newNode->memory = increment_pointer(memory, sizeof(MemoryNode));
     newNode->prev = prev;
     newNode->next = root;
+	root->prev = newNode;
     newNode->isFree = isFree;
 
     return newNode;
@@ -54,6 +55,7 @@ void *allocate(size_t size)
 void mysetup(void *buf, std::size_t size)
 {
     MemoryNode* root = build_node(buf, size, static_cast<MemoryNode *>(buf), true); //yep, point to itself, loop
+	root->next = root;
     head = root;
 }
 
@@ -62,7 +64,8 @@ void *myalloc(std::size_t size)
     if(head->hasEnoughMemory(size)) {
         return allocate(size);
     }
-    while(head->next && head->next != head) { //its a looped linked list
+	MemoryNode *end = head;
+    while( head->next != end) { //its a looped linked list
         head = head->next;
         if(head->hasEnoughMemory(size)) {
             return allocate(size);
@@ -75,7 +78,7 @@ void myfree(void *p)
 {
     MemoryNode *currentNode= static_cast<MemoryNode *>((decrement_pointer(p, sizeof(MemoryNode))));
     MemoryNode *prevNode = currentNode->prev;
-    if(prevNode && prevNode->isFree) {
+    if(prevNode->isFree) {
         prevNode->size = prevNode->size + sizeof(MemoryNode) + currentNode->size;
         prevNode->next = currentNode->next;
     } else {
